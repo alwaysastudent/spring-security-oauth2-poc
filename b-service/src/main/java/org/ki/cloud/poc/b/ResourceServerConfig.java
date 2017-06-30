@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.netflix.feign.EnableFeignClients;
@@ -22,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
@@ -35,11 +34,11 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.security.oauth2.provider.authentication.BearerTokenExtractor;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
-import org.springframework.security.oauth2.provider.authentication.TokenExtractor;
 import org.springframework.security.oauth2.provider.token.AccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
@@ -50,12 +49,12 @@ import org.springframework.web.context.request.RequestAttributes;
 import feign.RequestInterceptor;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 /**
  * 
  * @author Karthik Iyer
  *
  */
-@Slf4j
 @Configuration
 @Import(Oauth2ClientConfig.class)
 @EnableResourceServer
@@ -64,9 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
-	private final TokenStore tokenStore;
-
-	private final RestTemplate exchangeRestTemplate;
+	private final ResourceServerTokenServices tokenServices;
 
 	/**
 	 * Configure the access rules for securing the resources.
@@ -79,25 +76,79 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
 	/**
 	 * Customizing the default resource specific configurations. We have defined a custom
-	 * {@link TokenExtractor} which would exchange an opaque token with a JWT from the
-	 * uaa-service if found.
+	 * {@link ResourceServerTokenServices} which would exchange an opaque token with a JWT
+	 * from the uaa-service if found.
 	 */
 	@Override
 	public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-		resources.tokenStore(tokenStore).tokenExtractor(new BearerTokenExtractor() {
+		resources.tokenServices(tokenServices);
+	}
+
+}
+
+@Slf4j
+@Configuration
+@AllArgsConstructor
+class Oauth2ClientConfig {
+
+	private final JwtAccessTokenConverter jwtAccessTokenConverter;
+
+	/**
+	 * Defines the {@link AccessTokenConverter} with custom {@link JwtTokenConverter}
+	 * 
+	 * @return
+	 */
+	@Bean
+	protected AccessTokenConverter jwtTokenConverter() {
+		JwtTokenConverter jwtTokenConverter = new JwtTokenConverter();
+		jwtAccessTokenConverter.setAccessTokenConverter(jwtTokenConverter);
+		return jwtTokenConverter;
+	}
+
+	@Bean
+	public TokenStore tokenStore() {
+		return new JwtTokenStore(jwtAccessTokenConverter);
+	}
+
+	@Bean
+	public ResourceServerTokenServices tokenService(TokenStore tokenStore,
+			RestTemplate exchangeRestTemplate) {
+
+		return new DefaultTokenServices() {
+
+			{
+				{
+					setTokenStore(tokenStore);
+				}
+			}
 
 			@Override
-			protected String extractToken(HttpServletRequest request) {
-				String token = super.extractToken(request);
+			public OAuth2AccessToken readAccessToken(String accessToken) {
 				try {
-					tokenStore.readAccessToken(token);
+					tokenStore.readAccessToken(accessToken);
 				}
 				catch (InvalidTokenException e) {
 					// Exception coz it is not an expected JWT, let us try to exchange
-					token = exchaneForJwt(token);
+					accessToken = exchaneForJwt(accessToken);
 
 				}
-				return token;
+
+				return super.readAccessToken(accessToken);
+			}
+
+			@Override
+			public OAuth2Authentication loadAuthentication(String accessTokenValue)
+					throws AuthenticationException, InvalidTokenException {
+				try {
+					tokenStore.readAccessToken(accessTokenValue);
+				}
+				catch (InvalidTokenException e) {
+					// Exception coz it is not an expected JWT, let us try to exchange
+					accessTokenValue = exchaneForJwt(accessTokenValue);
+
+				}
+
+				return super.loadAuthentication(accessTokenValue);
 			}
 
 			private String exchaneForJwt(final String token) {
@@ -136,33 +187,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 					throw new InvalidTokenException("Invalid token: " + token);
 				}
 			}
-
-		});
-	}
-
-}
-
-@Configuration
-@AllArgsConstructor
-class Oauth2ClientConfig {
-
-	private final JwtAccessTokenConverter jwtAccessTokenConverter;
-
-	/**
-	 * Defines the {@link AccessTokenConverter} with custom {@link JwtTokenConverter}
-	 * 
-	 * @return
-	 */
-	@Bean
-	protected AccessTokenConverter jwtTokenConverter() {
-		JwtTokenConverter jwtTokenConverter = new JwtTokenConverter();
-		jwtAccessTokenConverter.setAccessTokenConverter(jwtTokenConverter);
-		return jwtTokenConverter;
-	}
-
-	@Bean
-	public TokenStore tokenStore() {
-		return new JwtTokenStore(jwtAccessTokenConverter);
+		};
 	}
 
 	/**
