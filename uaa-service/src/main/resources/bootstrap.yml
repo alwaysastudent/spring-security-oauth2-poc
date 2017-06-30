@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: uaa-service
+  zipkin:
+    enabled: false
+eureka:
+  client:
+    enabled: false
+server:
+  port: 9191
+  context-path: /uaa 
+---
+spring:
+  profiles: cloud
+eureka:
+  instance:
+    prefer-ip-address: false

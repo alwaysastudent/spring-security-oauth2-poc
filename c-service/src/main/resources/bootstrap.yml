@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: c-service
+  zipkin:
+    enabled: false
+eureka:
+  client:
+    enabled: false
+server:
+  port: 8003
+---
+spring:
+  profiles: cloud
+eureka:
+  instance:
+    prefer-ip-address: false

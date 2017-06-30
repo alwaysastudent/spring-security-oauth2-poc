@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.ki.cloud.poc</groupId>
+    <artifactId>spring-security-oauth2-poc</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>spring-security-oauth2-poc</name>
+    <description>POC with the spring-security-oauth2 implementing the AuthN</description>
+    <modules>
+        <module>uaa-service</module>
+        <module>a-service</module>
+        <module>b-service</module>
+        <module>c-service</module>
+    </modules>
+</project>

@@ -1,0 +1,11 @@
+---
+applications:
+- name: b-service
+  memory: 1024M
+  instances: 1
+  path: target/b-service-0.0.1-SNAPSHOT.jar
+  services:
+    - my-config-server
+    - service-registry
+  env:
+    JBP_CONFIG_OPEN_JDK_JRE: '[jre: {version: 1.8.0_+}, memory_calculator: {memory_heuristics: {heap: 65, metaspace: 20}}]'

@@ -1,0 +1,37 @@
+security:
+  basic:
+    enabled: false
+  oauth2:
+    resource:
+      jwt:
+        key-value: |
+                    -----BEGIN PUBLIC KEY-----
+                    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlyfzX0/T6NdMfokD2Fxs
+                    1LzzOvwGD90gBh7/XSOufAwsRKoX0FtHASW9BChwhyVDlVaJw73yuzbpW64m9gBl
+                    0H35HZ9nhmd2iIdXL3Zf2Z+4eDYeb3QMToWNSs0LxujEqR0KPAu/d1a3wnqQ0AcW
+                    4xytCcoh3hohcWzTMhPNlgudDsa5ueVDLGhnDXybAq2yOiDjJByQYWvvQAliZrcp
+                    ut6z38PcAGIrZoyGxvkqjM36yWkCKUauymcsHUtTGjPaeYjy2G8O+Nd8K3igKBfy
+                    Mh6DgCZ8RhIihETKPHpqu+nFYwpWVlOTNDNrbUe4/kuwVNXnSVV0oUS2l+iqPnTb
+                    SQIDAQAB
+                    -----END PUBLIC KEY-----
+hystrix:
+  shareSecurityContext: true
+  command.default.execution.timeout.enabled: false
+feign:
+  hystrix:
+    enabled: true
+ribbon:
+  eureka:
+    enabled: false
+a-service:
+  ribbon:
+    listOfServers: localhost:8001, localhost:8001  
+b-service:
+  ribbon:
+    listOfServers: localhost:8002, localhost:8002
+c-service:
+  ribbon:
+    listOfServers: localhost:8003, localhost:8003 
+uaa-service:
+  ribbon:
+    listOfServers: localhost:9191
