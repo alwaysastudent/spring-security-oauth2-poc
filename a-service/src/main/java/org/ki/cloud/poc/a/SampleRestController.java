@@ -65,7 +65,7 @@ class BReaderImpl implements BReader {
 
 	@Override
 	public String get(String from) {
-		return String.format("You can not reach the %s", from);
+		return "You can not reach the b-service";
 	}
 
 }
