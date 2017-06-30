@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
- * 
+ *
+ *
  * @author Karthik Iyer
  *
  */
@@ -31,36 +31,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserServiceRestController {
 
-	private final UserService userService;
+  private final UserService userService;
 
-	public UserServiceRestController(UserService userService) {
-		this.userService = userService;
-	}
+  public UserServiceRestController(UserService userService) {
+    this.userService = userService;
+  }
 
-	@PreAuthorize("isAuthenticated() && (hasRole('ROLE_USER') || hasRole('ROLE_CS')) && #oauth2.hasScope('read')")
-	@GetMapping(value = { "/user/{guid}", "/user" })
-	public UserDto getUser(@PathVariable Optional<String> guid,
-			@AuthenticationPrincipal Principal principal,
-			OAuth2Authentication authentication) {
-		// TODO - Change this to get user by Guid.
-		log.info("Getting the user = {} ", principal.getName());
-		return userService.getUser(principal.getName());
-	}
+  @PreAuthorize("isAuthenticated() && (hasRole('ROLE_USER') || hasRole('ROLE_CS')) && #oauth2.hasScope('read')")
+  @GetMapping(value = { "/user/{guid}", "/user" })
+  public UserDto getUser(@PathVariable Optional<String> guid,
+      @AuthenticationPrincipal Principal principal, OAuth2Authentication authentication) {
+    // TODO - Change this to get user by Guid.
+    log.info("Getting the user = {} ", principal.getName());
+    return userService.getUser(principal.getName());
+  }
 
-	@PreAuthorize("hasRole('ROLE_WEB') && #oauth2.hasScope('write')")
-	@PostMapping("/user/create")
-	@ResponseStatus(HttpStatus.CREATED)
-	public void createUser(@Valid @RequestBody UserDto user) {
-		log.info("Creating the user = {}", user);
-		userService.createUser(user);
-	}
+  @PreAuthorize("hasRole('ROLE_WEB') && #oauth2.hasScope('write')")
+  @PostMapping("/user/create")
+  @ResponseStatus(HttpStatus.CREATED)
+  public void createUser(@Valid @RequestBody UserDto user) {
+    log.info("Creating the user = {}", user);
+    userService.createUser(user);
+  }
 
-	@PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && (hasRole('ROLE_CS') || @userServiceSecurity.doesGuidMatch(authentication, #guid))")
-	@PutMapping("/user/update/{guid}")
-	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void updateUser(@RequestBody UserDto user, @PathVariable String guid) {
-		log.info("Updating the user = {}", user);
-		userService.updateUser(user);
-	}
+  @PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && (hasRole('ROLE_CS') || @userServiceSecurity.doesGuidMatch(authentication, #guid))")
+  @PutMapping("/user/update/{guid}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void updateUser(@RequestBody UserDto user, @PathVariable String guid) {
+    log.info("Updating the user = {}", user);
+    userService.updateUser(user);
+  }
 
 }

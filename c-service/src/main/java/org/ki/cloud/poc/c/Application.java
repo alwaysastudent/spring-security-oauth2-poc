@@ -7,7 +7,7 @@ import org.springframework.cloud.netflix.feign.EnableFeignClients;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -17,9 +17,9 @@ import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 @EnableHystrix
 public class Application {
 
-	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
 
-	}
+  }
 
 }

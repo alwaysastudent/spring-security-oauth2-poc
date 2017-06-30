@@ -51,7 +51,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -63,26 +63,26 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
-	private final ResourceServerTokenServices tokenServices;
+  private final ResourceServerTokenServices tokenServices;
 
-	/**
-	 * Configure the access rules for securing the resources.
-	 */
-	@Override
-	public void configure(HttpSecurity http) throws Exception {
-		http.cors().and().authorizeRequests().antMatchers("/**").authenticated();
+  /**
+   * Configure the access rules for securing the resources.
+   */
+  @Override
+  public void configure(HttpSecurity http) throws Exception {
+    http.cors().and().authorizeRequests().antMatchers("/**").authenticated();
 
-	}
+  }
 
-	/**
-	 * Customizing the default resource specific configurations. We have defined a custom
-	 * {@link ResourceServerTokenServices} which would exchange an opaque token with a JWT
-	 * from the uaa-service if found.
-	 */
-	@Override
-	public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
-		resources.tokenServices(tokenServices);
-	}
+  /**
+   * Customizing the default resource specific configurations. We have defined a custom
+   * {@link ResourceServerTokenServices} which would exchange an opaque token with a JWT
+   * from the uaa-service if found.
+   */
+  @Override
+  public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+    resources.tokenServices(tokenServices);
+  }
 
 }
 
@@ -91,181 +91,176 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 @AllArgsConstructor
 class Oauth2ClientConfig {
 
-	private final JwtAccessTokenConverter jwtAccessTokenConverter;
+  private final JwtAccessTokenConverter jwtAccessTokenConverter;
 
-	/**
-	 * Defines the {@link AccessTokenConverter} with custom {@link JwtTokenConverter}
-	 * 
-	 * @return
-	 */
-	@Bean
-	protected AccessTokenConverter jwtTokenConverter() {
-		JwtTokenConverter jwtTokenConverter = new JwtTokenConverter();
-		jwtAccessTokenConverter.setAccessTokenConverter(jwtTokenConverter);
-		return jwtTokenConverter;
-	}
+  /**
+   * Defines the {@link AccessTokenConverter} with custom {@link JwtTokenConverter}
+   *
+   * @return
+   */
+  @Bean
+  public AccessTokenConverter jwtTokenConverter() {
+    JwtTokenConverter jwtTokenConverter = new JwtTokenConverter();
+    jwtAccessTokenConverter.setAccessTokenConverter(jwtTokenConverter);
+    return jwtTokenConverter;
+  }
 
-	@Bean
-	public TokenStore tokenStore() {
-		return new JwtTokenStore(jwtAccessTokenConverter);
-	}
+  @Bean
+  public TokenStore tokenStore() {
+    return new JwtTokenStore(jwtAccessTokenConverter);
+  }
 
-	/**
-	 * Custom {@ link ResourceServerTokenServices} which is opaque token aware. If the
-	 * access token sent in is an opaque one, this will exchange it for an equal JWT from
-	 * the authorization server.
-	 * 
-	 * @param tokenStore
-	 * @param exchangeRestTemplate
-	 * @return ResourceServerTokenServices
-	 */
-	@Bean
-	public ResourceServerTokenServices tokenService(TokenStore tokenStore,
-			RestTemplate exchangeRestTemplate) {
+  /**
+   * Custom {@ link ResourceServerTokenServices} which is opaque token aware. If the
+   * access token sent in is an opaque one, this will exchange it for an equal JWT from
+   * the authorization server.
+   *
+   * @param tokenStore
+   * @param exchangeRestTemplate
+   * @return ResourceServerTokenServices
+   */
+  @Bean
+  public ResourceServerTokenServices tokenService(TokenStore tokenStore,
+      RestTemplate exchangeRestTemplate) {
 
-		return new DefaultTokenServices() {
+    return new DefaultTokenServices() {
 
-			{
-				{
-					setTokenStore(tokenStore);
-				}
-			}
+      {
+        {
+          setTokenStore(tokenStore);
+        }
+      }
 
-			@Override
-			public OAuth2AccessToken readAccessToken(String accessToken) {
-				try {
-					tokenStore.readAccessToken(accessToken);
-				}
-				catch (InvalidTokenException e) {
-					// Exception coz it is not an expected JWT, let us try to exchange
-					accessToken = exchaneForJwt(accessToken);
+      @Override
+      public OAuth2AccessToken readAccessToken(String accessToken) {
+        try {
+          tokenStore.readAccessToken(accessToken);
+        }
+        catch (InvalidTokenException e) {
+          // Exception coz it is not an expected JWT, let us try to exchange
+          accessToken = exchaneForJwt(accessToken);
 
-				}
+        }
 
-				return super.readAccessToken(accessToken);
-			}
+        return super.readAccessToken(accessToken);
+      }
 
-			@Override
-			public OAuth2Authentication loadAuthentication(String accessTokenValue)
-					throws AuthenticationException, InvalidTokenException {
-				return super.loadAuthentication(
-						readAccessToken(accessTokenValue).getValue());
-			}
+      @Override
+      public OAuth2Authentication loadAuthentication(String accessTokenValue)
+          throws AuthenticationException, InvalidTokenException {
+        return super.loadAuthentication(readAccessToken(accessTokenValue).getValue());
+      }
 
-			private String exchaneForJwt(final String token) {
-				log.info("Exchanging the opaque token, {} for a JWT", token);
-				HttpHeaders headers = new HttpHeaders();
-				headers.add("Authorization", "Bearer " + token);
-				HttpEntity<String> entity = new HttpEntity<String>(headers);
-				exchangeRestTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
+      private String exchaneForJwt(final String token) {
+        log.info("Exchanging the opaque token, {} for a JWT", token);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        exchangeRestTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
 
-					@Override
-					public void handleError(ClientHttpResponse response)
-							throws IOException {
-						HttpStatus statusCode = getHttpStatusCode(response);
-						switch (statusCode.series()) {
-						case CLIENT_ERROR:
-							throw new InvalidRequestException(String.format(
-									"Bad Request (most likely the token is invalid), %s ",
-									token));
-						default:
-							super.handleError(response);
-						}
+          @Override
+          public void handleError(ClientHttpResponse response) throws IOException {
+            HttpStatus statusCode = getHttpStatusCode(response);
+            switch (statusCode.series()) {
+            case CLIENT_ERROR:
+              throw new InvalidRequestException(String
+                  .format("Bad Request (most likely the token is invalid), %s ", token));
+            default:
+              super.handleError(response);
+            }
 
-					}
+          }
 
-				});
-				ResponseEntity<String> response = exchangeRestTemplate.exchange(
-						"http://uaa-service/uaa/token/exchange", HttpMethod.GET, entity,
-						String.class, token);
-				String jwt = response.getBody();
-				return jwt;
-			}
-		};
-	}
+        });
+        ResponseEntity<String> response = exchangeRestTemplate.exchange(
+            "http://uaa-service/uaa/token/exchange", HttpMethod.GET, entity, String.class,
+            token);
+        String jwt = response.getBody();
+        return jwt;
+      }
+    };
+  }
 
-	/**
-	 * Define the {@link OAuth2RestTemplate} which supports Token relay
-	 * 
-	 * @param oauth2ClientContext
-	 * @param details
-	 * @return
-	 */
-	@Bean
-	@LoadBalanced
-	public OAuth2RestTemplate oAuth2RestTemplate(OAuth2ClientContext oAuth2ClientContext,
-			OAuth2ProtectedResourceDetails details) {
-		return new OAuth2RestTemplate(details, oAuth2ClientContext);
-	}
+  /**
+   * Define the {@link OAuth2RestTemplate} which supports Token relay
+   *
+   * @param oauth2ClientContext
+   * @param details
+   * @return
+   */
+  @Bean
+  @LoadBalanced
+  public OAuth2RestTemplate oAuth2RestTemplate(OAuth2ClientContext oAuth2ClientContext,
+      OAuth2ProtectedResourceDetails details) {
+    return new OAuth2RestTemplate(details, oAuth2ClientContext);
+  }
 
-	/**
-	 * This is to work around a flaw within the {@link SecurityContextConcurrencyStrategy}
-	 * that does not propagate the {@link RequestAttributes} when hystrix is enabled. I'm
-	 * working on a solution for this and will issue a PR for review and attached with
-	 * this ticket.
-	 * 
-	 * https://github.com/spring-cloud/spring-cloud-netflix/issues/1336#issuecomment-312023007
-	 * 
-	 */
-	@Bean
-	public OAuth2ClientContext oAuth2ClientContext() {
-		return new DefaultOAuth2ClientContext() {
-			private static final long serialVersionUID = -7563661585547122665L;
+  /**
+   * This is to work around a flaw within the {@link SecurityContextConcurrencyStrategy}
+   * that does not propagate the {@link RequestAttributes} when hystrix is enabled. I'm
+   * working on a solution for this and will issue a PR for review and attached with this
+   * ticket.
+   *
+   * https://github.com/spring-cloud/spring-cloud-netflix/issues/1336#issuecomment-312023007
+   *
+   */
+  @Bean
+  public OAuth2ClientContext oAuth2ClientContext() {
+    return new DefaultOAuth2ClientContext() {
+      private static final long serialVersionUID = -7563661585547122665L;
 
-			@Override
-			public OAuth2AccessToken getAccessToken() {
-				return Optional.ofNullable(super.getAccessToken())
-						.orElse(new DefaultOAuth2AccessToken(
-								((OAuth2AuthenticationDetails) SecurityContextHolder
-										.getContext().getAuthentication().getDetails())
-												.getTokenValue()));
-			}
+      @Override
+      public OAuth2AccessToken getAccessToken() {
+        return Optional.ofNullable(super.getAccessToken())
+            .orElse(new DefaultOAuth2AccessToken(
+                ((OAuth2AuthenticationDetails) SecurityContextHolder.getContext()
+                    .getAuthentication().getDetails()).getTokenValue()));
+      }
 
-		};
-	}
+    };
+  }
 
-	/**
-	 * Making the feign clients oauth2 aware.
-	 * 
-	 * @param oAuth2ClientContext
-	 * @param resource
-	 * @return
-	 */
-	@Bean
-	public RequestInterceptor oAuth2FeignRequestInterceptor(
-			OAuth2ClientContext oAuth2ClientContext,
-			OAuth2ProtectedResourceDetails resource) {
-		return new OAuth2FeignRequestInterceptor(oAuth2ClientContext, resource);
-	}
+  /**
+   * Making the feign clients oauth2 aware.
+   *
+   * @param oAuth2ClientContext
+   * @param resource
+   * @return
+   */
+  @Bean
+  public RequestInterceptor oAuth2FeignRequestInterceptor(
+      OAuth2ClientContext oAuth2ClientContext, OAuth2ProtectedResourceDetails resource) {
+    return new OAuth2FeignRequestInterceptor(oAuth2ClientContext, resource);
+  }
 
-	@Bean
-	@LoadBalanced
-	public RestTemplate exchangeRestTemplate() {
-		return new RestTemplate();
-	}
+  @Bean
+  @LoadBalanced
+  public RestTemplate exchangeRestTemplate() {
+    return new RestTemplate();
+  }
 }
 
 /**
  * Customizes the {@link JwtAccessTokenConverter} to set up a custom
  * {@link AccessTokenConverter} which would add additional details in to the
  * {@link OAuth2Authentication} context
- * 
+ *
  * @author kariyer
  *
  */
 class JwtTokenConverter extends DefaultAccessTokenConverter
-		implements JwtAccessTokenConverterConfigurer {
+    implements JwtAccessTokenConverterConfigurer {
 
-	@Override
-	public void configure(JwtAccessTokenConverter converter) {
-		converter.setAccessTokenConverter(this);
-	}
+  @Override
+  public void configure(JwtAccessTokenConverter converter) {
+    converter.setAccessTokenConverter(this);
+  }
 
-	@Override
-	public OAuth2Authentication extractAuthentication(Map<String, ?> map) {
-		OAuth2Authentication auth = super.extractAuthentication(map);
-		// populate details from the provided map, which contains the whole JWT.
-		auth.setDetails(map);
-		return auth;
-	}
+  @Override
+  public OAuth2Authentication extractAuthentication(Map<String, ?> map) {
+    OAuth2Authentication auth = super.extractAuthentication(map);
+    // populate details from the provided map, which contains the whole JWT.
+    auth.setDetails(map);
+    return auth;
+  }
 }

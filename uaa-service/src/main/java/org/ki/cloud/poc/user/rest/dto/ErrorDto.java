@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -14,10 +15,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ErrorDto {
 
-	private String message;
+  private String message;
 
-	public ErrorDto(String message) {
-		this.message = message;
-	}
+  public ErrorDto(String message) {
+    this.message = message;
+  }
 
 }

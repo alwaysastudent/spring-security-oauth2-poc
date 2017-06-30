@@ -7,8 +7,9 @@ import org.springframework.stereotype.Service;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 import lombok.AllArgsConstructor;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -16,17 +17,17 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SampleRestService {
 
-	private final OAuth2RestTemplate oAuth2RestTemplate;
+  private final OAuth2RestTemplate oAuth2RestTemplate;
 
-	@HystrixCommand(fallbackMethod = "fallback")
-	public String callB(String from) {
-		final ResponseEntity<String> forEntity = oAuth2RestTemplate
-				.getForEntity("http://b-service/?from={from}", String.class, from);
-		return forEntity.getBody();
-	}
+  @HystrixCommand(fallbackMethod = "fallback")
+  public String callB(String from) {
+    final ResponseEntity<String> forEntity = oAuth2RestTemplate
+        .getForEntity("http://b-service/?from={from}", String.class, from);
+    return forEntity.getBody();
+  }
 
-	public String fallback(String from) {
-		return "You can not reach the b-service";
-	}
+  public String fallback(String from) {
+    return "You can not reach the b-service";
+  }
 
 }

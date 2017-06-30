@@ -10,31 +10,31 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
 @Service
 public class AuthUserDetailsService implements UserDetailsService {
 
-	private final UserRepository repository;
+  private final UserRepository repository;
 
-	AuthUserDetailsService(UserRepository repository) {
-		this.repository = repository;
-	}
+  AuthUserDetailsService(UserRepository repository) {
+    this.repository = repository;
+  }
 
-	@Override
-	public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
+  @Override
+  public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
 
-		Optional<UserEntity> userEntity = repository.findByUsername(s);
+    Optional<UserEntity> userEntity = repository.findByUsername(s);
 
-		return userEntity
-				.map(e -> new AuthUser(e.getUsername(), e.getPassword(), e.isActive(),
-						e.getGuid(),
-						AuthorityUtils.createAuthorityList(e.getRoles().stream()
-								.map(UserRoleType::toString).toArray(String[]::new))))
-				.orElseThrow(
-						() -> new UsernameNotFoundException("couldn't find  " + s + "!"));
-	}
+    return userEntity
+        .map(
+            e -> new AuthUser(e.getUsername(), e.getPassword(), e.isActive(), e.getGuid(),
+                AuthorityUtils.createAuthorityList(e.getRoles().stream()
+                    .map(UserRoleType::toString).toArray(String[]::new))))
+        .orElseThrow(() -> new UsernameNotFoundException("couldn't find  " + s + "!"));
+  }
 }

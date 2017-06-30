@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -20,14 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class TokenExchangeRestController {
 
-	public final JwtCache cache;
+  public final JwtCache cache;
 
-	@PreAuthorize("isAuthenticated() && ((hasRole('ROLE_USER') || hasRole('ROLE_CS') && @userServiceSecurity.doesGuidExist(authentication)) || hasRole('ROLE_WEB'))")
-	@GetMapping("/token/exchange")
-	public String exchangeJWT(OAuth2Authentication authentication) {
-		log.info("Giving the JWT for {}", authentication.getPrincipal());
-		return ((OAuth2AuthenticationDetails) SecurityContextHolder.getContext()
-				.getAuthentication().getDetails()).getTokenValue();
-	}
+  @PreAuthorize("isAuthenticated() && ((hasRole('ROLE_USER') || hasRole('ROLE_CS') && @userServiceSecurity.doesGuidExist(authentication)) || hasRole('ROLE_WEB'))")
+  @GetMapping("/token/exchange")
+  public String exchangeJWT(OAuth2Authentication authentication) {
+    log.info("Giving the JWT for {}", authentication.getPrincipal());
+    return ((OAuth2AuthenticationDetails) SecurityContextHolder.getContext()
+        .getAuthentication().getDetails()).getTokenValue();
+  }
 
 }

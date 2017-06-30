@@ -11,8 +11,9 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -23,19 +24,19 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(value = "password", allowSetters = true)
 public class UserDto {
 
-	@Email(message = "Not a well formed email address")
-	@NotNull(message = "Email empty")
-	private String email;
-	@NotNull(message = "Missing mandatory field")
-	private String name, phone, password;
-	
-	@JsonIgnoreProperties(value = "guid", allowGetters = true)
-	private String guid;
+  @Email(message = "Not a well formed email address")
+  @NotNull(message = "Email empty")
+  private String email;
+  @NotNull(message = "Missing mandatory field")
+  private String name, phone, password;
 
-	@NotNull
-	private boolean active;
+  @JsonIgnoreProperties(value = "guid", allowGetters = true)
+  private String guid;
 
-	@NotNull(message = "Roles missing")
-	private UserRoleType[] roles;
+  @NotNull
+  private boolean active;
+
+  @NotNull(message = "Roles missing")
+  private UserRoleType[] roles;
 
 }

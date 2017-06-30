@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -27,45 +28,44 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SampleRestController {
 
-	@Value("${spring.application.name}")
-	private String from;
+  @Value("${spring.application.name}")
+  private String from;
 
-	private final SampleRestService service;
+  private final SampleRestService service;
 
-	private final BReader feignClientForB;
+  private final BReader feignClientForB;
 
-	@ResponseBody
-	@RequestMapping("/")
-	@PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && @sampleSecurityService.hasPermission(authentication)")
-	public String a(@RequestParam(required = false, name = "useFeign") boolean useFeign,
-			OAuth2Authentication authentication) {
+  @ResponseBody
+  @RequestMapping("/")
+  @PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && @sampleSecurityService.hasPermission(authentication)")
+  public String a(@RequestParam(required = false, name = "useFeign") boolean useFeign,
+      OAuth2Authentication authentication) {
 
-		log.info("The jwt is {}",
-				((OAuth2AuthenticationDetails) authentication.getDetails())
-						.getTokenValue());
-		if (useFeign) {
-			log.info("Calling outbound with feign");
-			return feignClientForB.get(from);
-		}
-		return service.callB(from);
-	}
+    log.info("The jwt is {}",
+        ((OAuth2AuthenticationDetails) authentication.getDetails()).getTokenValue());
+    if (useFeign) {
+      log.info("Calling outbound with feign");
+      return feignClientForB.get(from);
+    }
+    return service.callB(from);
+  }
 
 }
 
 @FeignClient(name = "b-service", fallback = BReaderImpl.class)
 interface BReader {
 
-	@LoadBalanced
-	@RequestMapping(method = RequestMethod.GET, value = "/")
-	public String get(@RequestParam("from") String from);
+  @LoadBalanced
+  @RequestMapping(method = RequestMethod.GET, value = "/")
+  public String get(@RequestParam("from") String from);
 }
 
 @Service
 class BReaderImpl implements BReader {
 
-	@Override
-	public String get(String from) {
-		return "You can not reach the b-service";
-	}
+  @Override
+  public String get(String from) {
+    return "You can not reach the b-service";
+  }
 
 }

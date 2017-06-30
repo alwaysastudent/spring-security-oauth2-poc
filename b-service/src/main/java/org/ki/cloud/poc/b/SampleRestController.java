@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 /**
- * 
+ *
  * @author Karthik Iyer
  *
  */
@@ -23,23 +24,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class SampleRestController {
 
-	@Value("${spring.application.name}")
-	private String from;
+  @Value("${spring.application.name}")
+  private String from;
 
-	private final OAuth2RestTemplate restTemplate;
+  private final OAuth2RestTemplate restTemplate;
 
-	@ResponseBody
-	@RequestMapping("/")
-	@PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && @sampleSecurityService.hasPermission(authentication)")
-	public String b(@RequestParam("from") String pFrom,
-			OAuth2Authentication authentication) {
-		log.info("The jwt is {}",
-				((OAuth2AuthenticationDetails) authentication.getDetails())
-						.getTokenValue());
-		final ResponseEntity<String> forEntity = restTemplate.getForEntity(
-				"http://c-service?from={from}", String.class, pFrom + " -> " + from);
-		final String body = forEntity.getBody();
-		return String.format(body);
-	}
+  @ResponseBody
+  @RequestMapping("/")
+  @PreAuthorize("isAuthenticated() && #oauth2.hasScope('write') && @sampleSecurityService.hasPermission(authentication)")
+  public String b(@RequestParam("from") String pFrom,
+      OAuth2Authentication authentication) {
+    log.info("The jwt is {}",
+        ((OAuth2AuthenticationDetails) authentication.getDetails()).getTokenValue());
+    final ResponseEntity<String> forEntity = restTemplate.getForEntity(
+        "http://c-service?from={from}", String.class, pFrom + " -> " + from);
+    final String body = forEntity.getBody();
+    return String.format(body);
+  }
 
 }
