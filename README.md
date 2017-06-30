@@ -205,9 +205,9 @@ The resource server configuration support
 
 Following are the some of the customizations done in order to secure the `spring-mvc` endpoints and conduct the token relay.
 
-1) Setting up a [TokenExtractor](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L81) which would extract the token from the request and if the same is an opaque token, it would call the exchange endpoint for an equivalent JWT. But if the token comes in a JWT format, it will not make this exchange call.
-2) A custom [OAuth2ClientContext](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L183) with a line of code to override the default behavior – This is to work around a flaw with the default setup that flops while using Hystrix. Hystrix wraps the calls outbound to its own threads/callables and the request attributes and security context has to be shared appropriately. I am working on a PR for fixing this [issue](https://github.com/spring-cloud/spring-cloud-netflix/issues/1336#issuecomment-312023007).
-3) A custom [AccessTokenConverter](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L228) to add all the additional claims into the OAuth2Authentication as additional details.
+1) Setting up a [ResourceServerTokenServices](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L123) which would exchange the opaque token for a JWT. If the token in the JWT format, it won't make this exchange call.
+2) A custom [OAuth2ClientContext](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L211) with a line of code to override the default behavior – This is to work around a flaw with the default setup that flops while using Hystrix. Hystrix wraps the calls outbound in its own threads/callables and the request attributes and security context has to be shared appropriately. I am working on a PR to fix this [issue](https://github.com/spring-cloud/spring-cloud-netflix/issues/1336#issuecomment-312023007).
+3) A custom [AccessTokenConverter](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java#L256) to add all the additional claims into the OAuth2Authentication as additional details.
 
 All the resource server configurations can be found in the [ResourceServerConfig](a-service/src/main/java/org/ki/cloud/poc/a/ResourceServerConfig.java) and on the [application.yml](a-service/src/main/resources/application.yml) .
 

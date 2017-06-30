@@ -110,6 +110,15 @@ class Oauth2ClientConfig {
 		return new JwtTokenStore(jwtAccessTokenConverter);
 	}
 
+	/**
+	 * Custom {@ link ResourceServerTokenServices} which is opaque token aware. If the
+	 * access token sent in is an opaque one, this will exchange it for an equal JWT from
+	 * the authorization server.
+	 * 
+	 * @param tokenStore
+	 * @param exchangeRestTemplate
+	 * @return ResourceServerTokenServices
+	 */
 	@Bean
 	public ResourceServerTokenServices tokenService(TokenStore tokenStore,
 			RestTemplate exchangeRestTemplate) {
@@ -139,16 +148,8 @@ class Oauth2ClientConfig {
 			@Override
 			public OAuth2Authentication loadAuthentication(String accessTokenValue)
 					throws AuthenticationException, InvalidTokenException {
-				try {
-					tokenStore.readAccessToken(accessTokenValue);
-				}
-				catch (InvalidTokenException e) {
-					// Exception coz it is not an expected JWT, let us try to exchange
-					accessTokenValue = exchaneForJwt(accessTokenValue);
-
-				}
-
-				return super.loadAuthentication(accessTokenValue);
+				return super.loadAuthentication(
+						readAccessToken(accessTokenValue).getValue());
 			}
 
 			private String exchaneForJwt(final String token) {
@@ -178,14 +179,7 @@ class Oauth2ClientConfig {
 						"http://uaa-service/uaa/token/exchange", HttpMethod.GET, entity,
 						String.class, token);
 				String jwt = response.getBody();
-
-				try {
-					tokenStore.readAccessToken(jwt);
-					return jwt;
-				}
-				catch (InvalidTokenException e) {
-					throw new InvalidTokenException("Invalid token: " + token);
-				}
+				return jwt;
 			}
 		};
 	}
